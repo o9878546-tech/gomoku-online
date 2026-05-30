@@ -588,7 +588,8 @@ class AchievementSystem {
 // ============================================
 class Game {
     constructor() {
-        this.board = []; this.currentPlayer = 'black'; this.gameOver = false; this.history = [];
+        this.board = Array.from({ length: CONFIG.BOARD_SIZE }, () => Array(CONFIG.BOARD_SIZE).fill(null));
+        this.currentPlayer = 'black'; this.gameOver = false; this.history = [];
         this.mode = 'pvp'; this.difficulty = 'medium'; this.aiDifficulty = { black: null, white: 'medium' };
         this.items = { bomb: 1, freeze: 1, double: 1, shield: 1 }; this.shieldedPieces = new Set();
         this.activeItem = null; this.freezeTurns = 0; this.doubleMovesLeft = 0; this.startTime = 0; this.aiThinking = false;
