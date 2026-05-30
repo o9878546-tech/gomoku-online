@@ -246,8 +246,8 @@ io.on('connection', (socket) => {
         // 切换回合
         room.currentTurn = room.currentTurn === 'black' ? 'white' : 'black';
 
-        // 广播落子（除了发送者）
-        socket.to(roomId).emit('moveMade', {
+        // 广播落子（发送给所有人，包括发送者）
+        io.to(roomId).emit('moveMade', {
             row, col, player,
             nextTurn: room.currentTurn
         });
