@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五子棋测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 2px solid #333; background: #DEB887; }
+        .btn { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>五子棋测试页面</h1>
+    <div>
+        <button class="btn" onclick="testPVE()">人机对战测试</button>
+        <button class="btn" onclick="testOnline()">联机对战测试</button>
+    </div>
+    <div id="status">状态：未开始</div>
+    <canvas id="gameBoard" width="540" height="540"></canvas>
+    <div id="log"></div>
+
+    <script>
+        const CONFIG = { BOARD_SIZE: 15, CELL_SIZE: 36 };
+        let board = [];
+        let currentPlayer = 'black';
+        let gameOver = false;
+
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += msg + '<br>';
+            console.log(msg);
+        }
+
+        function initBoard() {
+            board = Array.from({ length: CONFIG.BOARD_SIZE }, () => Array(CONFIG.BOARD_SIZE).fill(null));
+            log('✅ 棋盘初始化完成');
+        }
+
+        function drawBoard() {
+            const canvas = document.getElementById('gameBoard');
+            const ctx = canvas.getContext('2d');
+            const cell = CONFIG.CELL_SIZE;
+
+            ctx.fillStyle = '#DEB887';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#8B7355';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < CONFIG.BOARD_SIZE; i++) {
+                const p = cell * (i + 1);
+                ctx.beginPath(); ctx.moveTo(p, cell); ctx.lineTo(p, cell * CONFIG.BOARD_SIZE); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cell, p); ctx.lineTo(cell * CONFIG.BOARD_SIZE, p); ctx.stroke();
+            }
+
+            log('✅ 棋盘绘制完成');
+        }
+
+        function testPVE() {
+            document.getElementById('status').textContent = '状态：人机对战测试中...';
+            log('🎮 开始人机对战测试');
+
+            initBoard();
+            drawBoard();
+
+            document.getElementById('status').textContent = '状态：人机对战测试成功！';
+            log('✅ 人机对战测试完成');
+        }
+
+        function testOnline() {
+            document.getElementById('status').textContent = '状态：联机对战测试中...';
+            log('🌐 开始联机对战测试');
+
+            if (typeof io === 'undefined') {
+                log('❌ Socket.IO 未加载');
+                document.getElementById('status').textContent = '状态：Socket.IO 未加载';
+                return;
+            }
+
+            log('✅ Socket.IO 已加载');
+
+            const socket = io(window.location.origin, {
+                transports: ['polling', 'websocket']
+            });
+
+            socket.on('connect', () => {
+                log('✅ 已连接到服务器，Socket ID: ' + socket.id);
+                document.getElementById('status').textContent = '状态：联机对战测试成功！';
+            });
+
+            socket.on('connect_error', (err) => {
+                log('❌ 连接错误: ' + err.message);
+                document.getElementById('status').textContent = '状态：连接失败';
+            });
+        }
+
+        // 初始化
+        window.onload = () => {
+            log('📄 页面加载完成');
+            initBoard();
+            drawBoard();
+        };
+    </script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</body>
+</html>
