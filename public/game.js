@@ -1115,6 +1115,7 @@ function getServerUrl() {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:3000';
     }
+    // Railway 部署时使用当前域名
     return window.location.origin;
 }
 

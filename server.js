@@ -5,14 +5,19 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+
+// 配置 Socket.IO 支持 Railway
 const io = socketIo(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        credentials: true
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],  // 先尝试 polling，再尝试 websocket
+    allowEIO3: true,
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+    maxHttpBufferSize: 1e6
 });
 
 // 静态文件
@@ -20,7 +25,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // 健康检查端点
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', rooms: rooms.size, connections: io.engine.clientsCount });
+    res.json({
+        status: 'ok',
+        rooms: rooms.size,
+        connections: io.engine.clientsCount,
+        uptime: process.uptime()
+    });
+});
+
+// 根路径也返回健康状态
+app.get('/api/status', (req, res) => {
+    res.json({ status: 'running' });
 });
 
 // 游戏房间
@@ -412,7 +427,7 @@ setInterval(() => {
 }, 300000); // 每5分钟检查一次
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🎮 五子棋服务器运行在端口 ${PORT}`);
     console.log(`📡 访问地址: http://localhost:${PORT}`);
 });
