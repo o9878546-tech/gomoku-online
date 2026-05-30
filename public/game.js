@@ -606,32 +606,40 @@ class Game {
     setupOnlineCallbacks() {
         this.online.onGameStartCallback = (data) => {
             console.log('🎮 收到游戏开始事件:', data);
-            this.gameStarted = true;
+            console.log('当前游戏模式:', this.mode);
+            console.log('当前玩家颜色:', this.online.playerColor);
 
-            // 如果从等待页面进入游戏页面
-            const waitingPage = document.getElementById('page-waiting');
-            console.log('等待页面是否active:', waitingPage.classList.contains('active'));
+            // 只有在联机模式且已设置颜色时才处理
+            if (this.mode === 'online' && this.online.playerColor) {
+                this.gameStarted = true;
 
-            if (waitingPage.classList.contains('active')) {
-                console.log('从等待页面跳转到游戏页面');
-                showPage('page-game');
+                // 如果从等待页面进入游戏页面
+                const waitingPage = document.getElementById('page-waiting');
+                console.log('等待页面是否active:', waitingPage.classList.contains('active'));
+
+                if (waitingPage.classList.contains('active')) {
+                    console.log('从等待页面跳转到游戏页面');
+                    showPage('page-game');
+                }
+
+                // 确保显示游戏页面
+                const gamePage = document.getElementById('page-game');
+                if (!gamePage.classList.contains('active')) {
+                    console.log('强制跳转到游戏页面');
+                    showPage('page-game');
+                }
+
+                // 延迟更新状态和渲染
+                setTimeout(() => {
+                    console.log('更新游戏状态和渲染');
+                    this.updatePlayerNames();
+                    this.resizeBoard();
+                    this.render();
+                    this.updateStatus('游戏开始！');
+                }, 100);
+            } else {
+                console.log('游戏模式未设置或颜色未设置，等待加入结果');
             }
-
-            // 确保显示游戏页面
-            const gamePage = document.getElementById('page-game');
-            if (!gamePage.classList.contains('active')) {
-                console.log('强制跳转到游戏页面');
-                showPage('page-game');
-            }
-
-            // 延迟更新状态和渲染
-            setTimeout(() => {
-                console.log('更新游戏状态和渲染');
-                this.updatePlayerNames();
-                this.resizeBoard();
-                this.render();
-                this.updateStatus('游戏开始！');
-            }, 100);
         };
 
         this.online.onMoveCallback = (data) => {
@@ -1189,6 +1197,9 @@ function createRoom() {
             console.log('创建房间结果:', res);
 
             if (res.success) {
+                // 先设置游戏模式和颜色
+                game.mode = 'online';
+                game.online.playerColor = res.color;
                 document.getElementById('waitingRoomCode').textContent = res.roomId;
                 showPage('page-waiting');
                 console.log('房间创建成功，房间号:', res.roomId);
@@ -1224,6 +1235,9 @@ function joinRoom() {
                     }
                 } else {
                     console.log('以玩家身份加入，颜色:', res.color);
+                    // 先设置游戏模式和颜色
+                    game.mode = 'online';
+                    game.online.playerColor = res.color;
                     game.startOnlineGame(res.color);
                     console.log('游戏已启动，等待对手落子...');
                 }
