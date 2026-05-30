@@ -643,16 +643,19 @@ class Game {
         };
 
         this.online.onMoveCallback = (data) => {
+            console.log('收到对手落子:', data);
             if (data.row !== undefined && data.col !== undefined) {
                 // 防止重复落子
                 if (!this.board[data.row][data.col]) {
                     this.board[data.row][data.col] = data.player;
                     this.history.push({ row: data.row, col: data.col, player: data.player });
                     this.audio.playMove();
+                    console.log('更新棋盘:', data.row, data.col, data.player);
                 }
 
                 if (data.nextTurn) {
                     this.currentPlayer = data.nextTurn;
+                    console.log('切换回合到:', this.currentPlayer);
                 }
 
                 this.updateStatus();
@@ -796,7 +799,7 @@ class Game {
         this.items = { bomb: 0, freeze: 0, double: 0, shield: 0 };
         this.startTime = Date.now();
         this.winLine = null;
-        this.gameStarted = false;
+        this.gameStarted = true;  // 改为 true，游戏已开始
 
         // 更新UI显示
         document.getElementById('itemsBar').style.display = 'none';
@@ -907,9 +910,15 @@ class Game {
             // 观众不能落子
             if (this.online.playerColor === 'spectator') return;
             // 不是自己的回合不能落子
-            if (this.currentPlayer !== this.online.playerColor) return;
+            if (this.currentPlayer !== this.online.playerColor) {
+                console.log('不是你的回合，当前回合:', this.currentPlayer, '你的颜色:', this.online.playerColor);
+                return;
+            }
             // 游戏未开始不能落子
-            if (!this.gameStarted) return;
+            if (!this.gameStarted) {
+                console.log('游戏未开始');
+                return;
+            }
         }
 
         const rect = this.canvas.getBoundingClientRect();
@@ -924,12 +933,14 @@ class Game {
 
     makeMove(row, col) {
         if (this.board[row][col]) return false;
+        console.log('落子:', row, col, '玩家:', this.currentPlayer, '模式:', this.mode);
         this.board[row][col] = this.currentPlayer;
         this.history.push({ row, col, player: this.currentPlayer });
         this.audio.playMove(); this.render();
 
         // 联机模式发送落子
         if (this.mode === 'online') {
+            console.log('发送落子到服务器:', row, col, this.currentPlayer);
             this.online.sendMove(row, col, this.currentPlayer);
         }
 
