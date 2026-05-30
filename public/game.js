@@ -643,16 +643,19 @@ class Game {
         };
 
         this.online.onMoveCallback = (data) => {
-            console.log('收到对手落子:', data);
+            console.log('收到落子事件:', data);
             if (data.row !== undefined && data.col !== undefined) {
-                // 防止重复落子
+                // 如果棋盘位置为空，说明是对手的落子，需要放置
                 if (!this.board[data.row][data.col]) {
                     this.board[data.row][data.col] = data.player;
                     this.history.push({ row: data.row, col: data.col, player: data.player });
                     this.audio.playMove();
-                    console.log('更新棋盘:', data.row, data.col, data.player);
+                    console.log('放置对手棋子:', data.row, data.col, data.player);
+                } else {
+                    console.log('自己的棋子已放置，跳过');
                 }
 
+                // 切换回合
                 if (data.nextTurn) {
                     this.currentPlayer = data.nextTurn;
                     console.log('切换回合到:', this.currentPlayer);
@@ -660,11 +663,6 @@ class Game {
 
                 this.updateStatus();
                 this.render();
-
-                // 如果是观众模式，更新显示
-                if (this.online.playerColor === 'spectator') {
-                    this.updateStatus(`当前: ${this.currentPlayer === 'black' ? '黑棋' : '白棋'}落子`);
-                }
             }
         };
 
@@ -942,6 +940,8 @@ class Game {
         if (this.mode === 'online') {
             console.log('发送落子到服务器:', row, col, this.currentPlayer);
             this.online.sendMove(row, col, this.currentPlayer);
+            // 不在这里切换回合，等待服务器确认
+            return false;
         }
 
         const win = this.checkWin(row, col, this.currentPlayer);
