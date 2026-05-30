@@ -29,18 +29,23 @@ class OnlineManager {
         }
 
         this.socket = io(serverUrl, {
-            transports: ['websocket', 'polling'],
+            transports: ['polling', 'websocket'],  // 优先使用 polling，再尝试 websocket
             reconnection: true,
             reconnectionAttempts: this.maxReconnectAttempts,
             reconnectionDelay: 1000,
-            timeout: 10000
+            reconnectionDelayMax: 5000,
+            timeout: 20000,
+            forceNew: false,
+            multiplex: true,
+            upgrade: true,
+            rememberUpgrade: true
         });
 
         this.socket.on('connect', () => {
             this.connected = true;
             this.reconnectAttempts = 0;
             this.updateConnectionUI(true);
-            console.log('已连接到服务器');
+            console.log('✅ 已连接到服务器，Socket ID:', this.socket.id);
 
             // 如果有房间号，尝试重新加入
             if (this.roomId && this.playerColor) {
@@ -51,17 +56,19 @@ class OnlineManager {
         this.socket.on('disconnect', (reason) => {
             this.connected = false;
             this.updateConnectionUI(false);
-            console.log('已断开连接:', reason);
+            console.log('❌ 已断开连接:', reason);
 
             if (reason === 'io server disconnect') {
                 // 服务器主动断开，需要重新连接
+                console.log('🔄 尝试重新连接...');
                 this.socket.connect();
             }
         });
 
         this.socket.on('connect_error', (err) => {
-            console.log('连接错误:', err.message);
+            console.log('⚠️ 连接错误:', err.message);
             this.reconnectAttempts++;
+            console.log('重连尝试次数:', this.reconnectAttempts);
         });
 
         this.socket.on('reconnect', (attemptNumber) => {
@@ -1267,4 +1274,25 @@ function renderAchievements() {
 }
 
 // 初始化
-document.addEventListener('DOMContentLoaded', () => { game = new Game(); });
+document.addEventListener('DOMContentLoaded', () => {
+    game = new Game();
+
+    // 添加连接测试按钮
+    const testBtn = document.createElement('button');
+    testBtn.textContent = '测试连接';
+    testBtn.className = 'btn btn-secondary btn-small';
+    testBtn.style.position = 'fixed';
+    testBtn.style.bottom = '10px';
+    testBtn.style.left = '10px';
+    testBtn.style.zIndex = '1000';
+    testBtn.onclick = () => {
+        if (game && game.online) {
+            const status = game.online.connected ? '✅ 已连接' : '❌ 未连接';
+            const socketId = game.online.socket ? game.online.socket.id : '无';
+            alert(`连接状态: ${status}\nSocket ID: ${socketId}`);
+        } else {
+            alert('游戏未初始化');
+        }
+    };
+    document.body.appendChild(testBtn);
+});
