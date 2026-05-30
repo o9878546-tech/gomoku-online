@@ -1276,24 +1276,48 @@ function renderAchievements() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    game = new Game();
+    console.log('📄 DOM 加载完成');
 
-    // 添加连接测试按钮
-    const testBtn = document.createElement('button');
-    testBtn.textContent = '测试连接';
-    testBtn.className = 'btn btn-secondary btn-small';
-    testBtn.style.position = 'fixed';
-    testBtn.style.bottom = '10px';
-    testBtn.style.left = '10px';
-    testBtn.style.zIndex = '1000';
-    testBtn.onclick = () => {
-        if (game && game.online) {
-            const status = game.online.connected ? '✅ 已连接' : '❌ 未连接';
-            const socketId = game.online.socket ? game.online.socket.id : '无';
-            alert(`连接状态: ${status}\nSocket ID: ${socketId}`);
+    try {
+        console.log('🎮 初始化游戏...');
+        game = new Game();
+        console.log('✅ 游戏初始化成功');
+
+        // 检查canvas
+        if (game.canvas) {
+            console.log('✅ Canvas 元素找到');
         } else {
-            alert('游戏未初始化');
+            console.log('❌ Canvas 元素未找到');
         }
-    };
-    document.body.appendChild(testBtn);
+
+        // 检查board
+        if (game.board && game.board.length > 0) {
+            console.log('✅ Board 数组初始化成功，大小:', game.board.length);
+        } else {
+            console.log('❌ Board 数组初始化失败');
+        }
+
+        // 添加连接测试按钮
+        const testBtn = document.createElement('button');
+        testBtn.textContent = '测试连接';
+        testBtn.className = 'btn btn-secondary btn-small';
+        testBtn.style.position = 'fixed';
+        testBtn.style.bottom = '10px';
+        testBtn.style.left = '10px';
+        testBtn.style.zIndex = '1000';
+        testBtn.onclick = () => {
+            if (game && game.online) {
+                const status = game.online.connected ? '✅ 已连接' : '❌ 未连接';
+                const socketId = game.online.socket ? game.online.socket.id : '无';
+                alert(`连接状态: ${status}\nSocket ID: ${socketId}`);
+            } else {
+                alert('游戏未初始化');
+            }
+        };
+        document.body.appendChild(testBtn);
+
+    } catch (error) {
+        console.error('❌ 游戏初始化失败:', error);
+        alert('游戏初始化失败: ' + error.message);
+    }
 });
