@@ -605,12 +605,24 @@ class Game {
     // 设置联机回调
     setupOnlineCallbacks() {
         this.online.onGameStartCallback = (data) => {
+            console.log('🎮 收到游戏开始事件:', data);
             this.gameStarted = true;
             this.updateStatus('游戏开始！');
             this.updatePlayerNames();
 
             // 如果从等待页面进入游戏页面
-            if (document.getElementById('page-waiting').classList.contains('active')) {
+            const waitingPage = document.getElementById('page-waiting');
+            console.log('等待页面是否active:', waitingPage.classList.contains('active'));
+
+            if (waitingPage.classList.contains('active')) {
+                console.log('从等待页面跳转到游戏页面');
+                showPage('page-game');
+            }
+
+            // 确保显示游戏页面
+            const gamePage = document.getElementById('page-game');
+            if (!gamePage.classList.contains('active')) {
+                console.log('强制跳转到游戏页面');
                 showPage('page-game');
             }
         };
@@ -1163,11 +1175,16 @@ function ensureConnection(callback) {
 }
 
 function createRoom() {
+    console.log('🏠 尝试创建房间');
+
     ensureConnection(() => {
         game.online.createRoom((res) => {
+            console.log('创建房间结果:', res);
+
             if (res.success) {
                 document.getElementById('waitingRoomCode').textContent = res.roomId;
                 showPage('page-waiting');
+                console.log('房间创建成功，房间号:', res.roomId);
                 // 等待对手加入后再开始游戏
             } else {
                 alert('创建房间失败：' + (res.error || '未知错误'));
@@ -1180,11 +1197,16 @@ function joinRoom() {
     const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
     if (!code || code.length < 4) { alert('请输入有效的房间号'); return; }
 
+    console.log('🔗 尝试加入房间:', code);
+
     ensureConnection(() => {
         game.online.joinRoom(code, (res) => {
+            console.log('加入房间结果:', res);
+
             if (res.success) {
                 if (res.isSpectator) {
                     // 观众模式
+                    console.log('以观众身份加入');
                     game.startOnlineGame('spectator');
                     // 同步当前棋盘状态
                     if (res.gameState) {
@@ -1194,6 +1216,7 @@ function joinRoom() {
                         game.updateStatus();
                     }
                 } else {
+                    console.log('以玩家身份加入，颜色:', res.color);
                     game.startOnlineGame(res.color);
                 }
             } else {
