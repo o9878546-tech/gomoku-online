@@ -942,6 +942,9 @@ class Game {
         if (this.mode === 'online') {
             console.log('发送落子到服务器:', row, col, this.currentPlayer);
             this.online.sendMove(row, col, this.currentPlayer);
+            // 本地切换回合（服务器不会回发给自己）
+            this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+            this.updateStatus();
         }
 
         const win = this.checkWin(row, col, this.currentPlayer);
