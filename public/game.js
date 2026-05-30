@@ -607,8 +607,6 @@ class Game {
         this.online.onGameStartCallback = (data) => {
             console.log('🎮 收到游戏开始事件:', data);
             this.gameStarted = true;
-            this.updateStatus('游戏开始！');
-            this.updatePlayerNames();
 
             // 如果从等待页面进入游戏页面
             const waitingPage = document.getElementById('page-waiting');
@@ -625,6 +623,15 @@ class Game {
                 console.log('强制跳转到游戏页面');
                 showPage('page-game');
             }
+
+            // 延迟更新状态和渲染
+            setTimeout(() => {
+                console.log('更新游戏状态和渲染');
+                this.updatePlayerNames();
+                this.resizeBoard();
+                this.render();
+                this.updateStatus('游戏开始！');
+            }, 100);
         };
 
         this.online.onMoveCallback = (data) => {
