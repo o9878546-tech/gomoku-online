@@ -132,9 +132,11 @@ io.on('connection', (socket) => {
 
     // 加入房间
     socket.on('joinRoom', (roomId, callback) => {
+        console.log(`玩家 ${socket.id} 尝试加入房间 ${roomId}`);
         const room = rooms.get(roomId);
 
         if (!room) {
+            console.log(`房间 ${roomId} 不存在`);
             callback({ success: false, error: '房间不存在' });
             return;
         }
@@ -142,12 +144,14 @@ io.on('connection', (socket) => {
         // 检查是否已在游戏中
         const existingPlayer = room.players.find(p => p.id === socket.id);
         if (existingPlayer) {
+            console.log(`玩家 ${socket.id} 已经在房间中`);
             callback({ success: false, error: '你已经在这个房间中' });
             return;
         }
 
         // 检查房间是否已满（2个玩家）
         if (room.players.length >= 2) {
+            console.log(`房间 ${roomId} 已满，加入为观众`);
             // 加入为观众
             room.spectators.push(socket.id);
             socket.join(roomId);
@@ -177,9 +181,13 @@ io.on('connection', (socket) => {
         socket.roomId = roomId;
         socket.playerColor = color;
 
+        console.log(`玩家 ${socket.id} 加入房间 ${roomId}，执${color === 'black' ? '黑' : '白'}棋`);
+        console.log(`房间 ${roomId} 当前玩家数: ${room.players.length}`);
+
         // 标记游戏开始
         if (room.players.length === 2) {
             room.gameStarted = true;
+            console.log(`房间 ${roomId} 游戏开始！`);
 
             // 通知双方游戏开始
             io.to(roomId).emit('gameStart', {
@@ -189,7 +197,6 @@ io.on('connection', (socket) => {
         }
 
         callback({ success: true, color });
-        console.log(`玩家 ${socket.id} 加入房间 ${roomId}，执${color === 'black' ? '黑' : '白'}棋`);
     });
 
     // 落子

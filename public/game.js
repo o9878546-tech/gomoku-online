@@ -1225,6 +1225,7 @@ function joinRoom() {
                 } else {
                     console.log('以玩家身份加入，颜色:', res.color);
                     game.startOnlineGame(res.color);
+                    console.log('游戏已启动，等待对手落子...');
                 }
             } else {
                 alert('加入失败：' + (res.error || '房间不存在'));
