@@ -1,0 +1,159 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 700px;
+    width: 100%;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+.room-controls {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+}
+
+.join-section {
+    display: flex;
+    gap: 10px;
+}
+
+input {
+    padding: 12px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    width: 150px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.game-info {
+    margin-bottom: 20px;
+}
+
+.room-id {
+    font-size: 18px;
+    color: #667eea;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.status {
+    font-size: 20px;
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.current-player {
+    font-size: 16px;
+    color: #666;
+}
+
+.board-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+canvas {
+    border: 3px solid #333;
+    border-radius: 10px;
+    cursor: pointer;
+    max-width: 100%;
+    height: auto;
+}
+
+.game-controls {
+    margin-top: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    .room-controls {
+        flex-direction: column;
+    }
+
+    .join-section {
+        width: 100%;
+    }
+
+    input {
+        flex: 1;
+    }
+
+    canvas {
+        width: 100%;
+        height: auto;
+    }
+}
