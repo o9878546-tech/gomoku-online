@@ -2,37 +2,355 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五子棋 - 联机对战</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>五子棋 Pro - 在线对战</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .container { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; text-align: center; backdrop-filter: blur(10px); }
-        h1 { color: #00d4ff; font-size: 36px; margin-bottom: 20px; }
-        .menu { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .btn { padding: 12px 24px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00d4ff, #0099cc); }
-        .btn:hover { transform: translateY(-2px); }
-        .btn-danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
-        input { padding: 12px 16px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 16px; text-align: center; text-transform: uppercase; letter-spacing: 2px; width: 150px; outline: none; }
-        input::placeholder { color: rgba(255,255,255,0.5); }
-        #status { color: #fff; font-size: 18px; font-weight: 600; margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 12px; }
-        #roomDisplay { color: #00d4ff; font-size: 20px; font-weight: 700; margin: 15px 0; display: none; }
-        canvas { border-radius: 12px; cursor: pointer; margin: 15px 0; }
+        :root {
+            --bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --text: #fff;
+            --text2: rgba(255,255,255,0.7);
+            --accent: #00d4ff;
+            --glow: rgba(0,212,255,0.3);
+            --card: rgba(255,255,255,0.08);
+            --border: rgba(255,255,255,0.1);
+            --board-bg: #DEB887;
+            --board-line: #8B7355;
+            --btn: linear-gradient(135deg, #00d4ff, #0099cc);
+            --success: #4CAF50;
+            --danger: #f44336;
+        }
+        [data-theme="neon"] {
+            --bg: linear-gradient(135deg, #0a0a1a, #1a0a2e);
+            --accent: #00ffff;
+            --glow: rgba(0,255,255,0.4);
+            --card: rgba(0,255,255,0.05);
+            --border: rgba(0,255,255,0.2);
+            --board-bg: #1a1a2e;
+            --board-line: #00ffff;
+            --btn: linear-gradient(135deg, #ff00ff, #8800cc);
+        }
+        [data-theme="chinese"] {
+            --bg: linear-gradient(135deg, #f5f0e8, #d4c8b0);
+            --text: #2c1810;
+            --text2: rgba(44,24,16,0.6);
+            --accent: #8B4513;
+            --glow: rgba(139,69,19,0.2);
+            --card: rgba(255,255,255,0.6);
+            --border: rgba(139,69,19,0.2);
+            --board-bg: #f0e6d2;
+            --board-line: #8B4513;
+            --btn: linear-gradient(135deg, #8B4513, #A0522D);
+        }
+        [data-theme="dark"] {
+            --bg: linear-gradient(135deg, #000, #222);
+            --accent: #fff;
+            --glow: rgba(255,255,255,0.2);
+            --card: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.1);
+            --board-bg: #1a1a1a;
+            --board-line: #444;
+            --btn: linear-gradient(135deg, #fff, #ccc);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Microsoft YaHei',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+        .container { max-width:800px; margin:0 auto; padding:20px; min-height:100vh; }
+        .page { display:none; animation:fadeIn 0.3s; }
+        .page.active { display:block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; backdrop-filter:blur(10px); margin-bottom:16px; }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 24px; border:none; border-radius:12px; font-size:16px; font-weight:600; cursor:pointer; color:#fff; background:var(--btn); box-shadow:0 4px 15px var(--glow); }
+        .btn:hover { transform:translateY(-2px); }
+        .btn-sm { padding:8px 16px; font-size:14px; }
+        .btn-icon { width:44px; height:44px; padding:0; border-radius:50%; }
+        .btn-secondary { background:var(--card); border:1px solid var(--border); box-shadow:none; color:var(--text); }
+        .btn-success { background:linear-gradient(135deg,#4CAF50,#45a049); }
+        .btn-danger { background:linear-gradient(135deg,#f44336,#d32f2f); }
+        .header { text-align:center; padding:30px 0; }
+        .header h1 { font-size:42px; font-weight:800; background:linear-gradient(135deg,var(--accent),#ff6b6b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:8px; }
+        .header p { color:var(--text2); }
+        .menu-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin:20px 0; }
+        .menu-card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:25px 15px; text-align:center; cursor:pointer; transition:all 0.3s; }
+        .menu-card:hover { transform:translateY(-5px); border-color:var(--accent); box-shadow:0 10px 30px var(--glow); }
+        .menu-card .icon { font-size:42px; margin-bottom:10px; }
+        .menu-card h3 { font-size:16px; margin-bottom:6px; }
+        .menu-card p { font-size:12px; color:var(--text2); }
+        .game-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+        .player-info { display:flex; gap:12px; flex:1; justify-content:center; }
+        .player-card { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:12px; background:var(--card); border:2px solid transparent; }
+        .player-card.active { border-color:var(--accent); box-shadow:0 0 20px var(--glow); }
+        .piece { width:24px; height:24px; border-radius:50%; }
+        .piece.black { background:radial-gradient(circle at 35% 35%,#555,#000); }
+        .piece.white { background:radial-gradient(circle at 35% 35%,#fff,#ccc); }
+        .board-wrap { display:flex; justify-content:center; margin:16px 0; }
+        .board-box { position:relative; background:var(--board-bg); border-radius:12px; padding:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+        #gameBoard { display:block; cursor:pointer; }
+        .status { text-align:center; padding:12px; margin-bottom:16px; background:var(--card); border-radius:12px; font-size:18px; font-weight:600; }
+        .controls { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+        .diff-selector { display:flex; gap:12px; margin:20px 0; }
+        .diff-btn { flex:1; padding:16px; border-radius:12px; text-align:center; cursor:pointer; background:var(--card); border:2px solid var(--border); }
+        .diff-btn:hover { border-color:var(--accent); box-shadow:0 4px 15px var(--glow); }
+        .diff-btn .emoji { font-size:32px; margin-bottom:8px; }
+        .diff-btn .name { font-weight:600; font-size:14px; }
+        .diff-btn .desc { font-size:12px; color:var(--text2); }
+        .theme-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+        .theme-opt { padding:12px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid var(--border); }
+        .theme-opt:hover, .theme-opt.active { border-color:var(--accent); }
+        .theme-opt .preview { width:40px; height:40px; border-radius:8px; margin:0 auto 6px; }
+        .theme-opt .name { font-size:12px; font-weight:600; }
+        .stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+        .stat-card { padding:20px; border-radius:12px; background:var(--card); border:1px solid var(--border); text-align:center; }
+        .stat-card .val { font-size:28px; font-weight:800; color:var(--accent); }
+        .stat-card .label { font-size:12px; color:var(--text2); }
+        .ach-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+        .ach-card { padding:16px; border-radius:12px; background:var(--card); border:1px solid var(--border); text-align:center; }
+        .ach-card.unlocked { border-color:var(--accent); box-shadow:0 0 15px var(--glow); }
+        .ach-card.locked { opacity:0.5; filter:grayscale(1); }
+        .ach-card .ach-icon { font-size:36px; margin-bottom:8px; }
+        .ach-card .ach-name { font-weight:700; font-size:14px; }
+        .ach-card .ach-desc { font-size:11px; color:var(--text2); }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100; justify-content:center; align-items:center; backdrop-filter:blur(5px); }
+        .modal.show { display:flex; }
+        .modal-box { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:30px; text-align:center; max-width:400px; width:90%; backdrop-filter:blur(20px); }
+        .modal-box h2 { font-size:24px; margin-bottom:8px; }
+        .modal-box p { color:var(--text2); margin-bottom:20px; }
+        .modal-box .btns { display:flex; gap:12px; justify-content:center; }
+        .room-info { font-size:42px; font-weight:800; letter-spacing:6px; color:var(--accent); text-align:center; padding:20px; background:var(--card); border-radius:12px; margin:15px 0; font-family:monospace; }
+        .input-group { display:flex; gap:12px; margin:15px 0; }
+        .input-group input { flex:1; padding:12px 16px; border-radius:12px; border:2px solid var(--border); background:var(--card); color:var(--text); font-size:16px; text-align:center; letter-spacing:3px; text-transform:uppercase; outline:none; }
+        .input-group input:focus { border-color:var(--accent); }
+        .setting-row { display:flex; align-items:center; justify-content:space-between; padding:14px; background:var(--card); border-radius:12px; margin-bottom:8px; }
+        .toggle { position:relative; width:48px; height:26px; background:rgba(255,255,255,0.1); border-radius:13px; cursor:pointer; }
+        .toggle.on { background:var(--accent); }
+        .toggle::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:50%; transition:0.3s; }
+        .toggle.on::after { left:25px; }
+        .items-bar { display:flex; gap:8px; justify-content:center; margin:12px 0; }
+        .item-btn { position:relative; width:50px; height:50px; border-radius:12px; background:var(--card); border:2px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+        .item-btn:hover:not(.disabled) { border-color:var(--accent); }
+        .item-btn.disabled { opacity:0.4; cursor:not-allowed; }
+        .item-btn .icon { font-size:20px; }
+        .item-btn .count { position:absolute; top:-4px; right:-4px; background:var(--danger); color:#fff; font-size:10px; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
+        @media(max-width:600px) {
+            .container { padding:12px; }
+            .header h1 { font-size:28px; }
+            .menu-grid { gap:12px; }
+            .menu-card { padding:18px 10px; }
+            .menu-card .icon { font-size:32px; }
+            .diff-selector { flex-direction:column; }
+            .theme-grid { grid-template-columns:repeat(2,1fr); }
+        }
     </style>
 </head>
-<body>
+<body data-theme="default">
     <div class="container">
-        <h1>🎮 五子棋</h1>
-        <div class="menu">
-            <button class="btn" onclick="createRoom()">创建房间</button>
-            <input type="text" id="roomInput" placeholder="房间号" maxlength="6">
-            <button class="btn" onclick="joinRoom()">加入房间</button>
+        <!-- 主菜单 -->
+        <div id="page-menu" class="page active">
+            <div class="header">
+                <h1>五子棋 Pro</h1>
+                <p>经典策略对弈 · 在线联机对战</p>
+            </div>
+            <div class="menu-grid">
+                <div class="menu-card" onclick="showPage('page-online')">
+                    <div class="icon">🌐</div>
+                    <h3>联机对战</h3>
+                    <p>创建/加入房间</p>
+                </div>
+                <div class="menu-card" onclick="showPage('page-pve')">
+                    <div class="icon">🤖</div>
+                    <h3>人机对战</h3>
+                    <p>挑战AI三个难度</p>
+                </div>
+                <div class="menu-card" onclick="startPVP()">
+                    <div class="icon">👥</div>
+                    <h3>人人对战</h3>
+                    <p>双人同屏对弈</p>
+                </div>
+                <div class="menu-card" onclick="showPage('page-stats')">
+                    <div class="icon">📊</div>
+                    <h3>数据统计</h3>
+                    <p>查看战绩分析</p>
+                </div>
+                <div class="menu-card" onclick="showPage('page-ach')">
+                    <div class="icon">🎖️</div>
+                    <h3>成就系统</h3>
+                    <p>解锁挑战徽章</p>
+                </div>
+                <div class="menu-card" onclick="showPage('page-settings')">
+                    <div class="icon">⚙️</div>
+                    <h3>设置</h3>
+                    <p>主题与音效</p>
+                </div>
+            </div>
         </div>
-        <div id="roomDisplay"></div>
-        <div id="status">点击"创建房间"开始</div>
-        <canvas id="gameBoard"></canvas>
+
+        <!-- 联机大厅 -->
+        <div id="page-online" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="showPage('page-menu')">←</button>
+                <h2>联机对战</h2>
+                <div></div>
+            </div>
+            <div class="card" style="text-align:center">
+                <h3 style="margin-bottom:12px">创建房间</h3>
+                <p style="color:var(--text2);margin-bottom:12px">创建新房间，邀请好友加入</p>
+                <button class="btn btn-success" onclick="onlineCreate()">创建房间</button>
+            </div>
+            <div class="card" style="text-align:center">
+                <h3 style="margin-bottom:12px">加入房间</h3>
+                <p style="color:var(--text2);margin-bottom:12px">输入房间号加入好友</p>
+                <div class="input-group">
+                    <input type="text" id="roomInput" placeholder="输入房间号" maxlength="6">
+                    <button class="btn" onclick="onlineJoin()">加入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 等待页面 -->
+        <div id="page-waiting" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="onlineLeave()">←</button>
+                <h2>等待对手</h2>
+                <div></div>
+            </div>
+            <div class="card" style="text-align:center">
+                <p style="color:var(--text2);margin-bottom:8px">分享房间号给好友</p>
+                <div class="room-info" id="waitRoomCode">------</div>
+                <p style="color:var(--text2);font-size:13px">等待对手加入...</p>
+            </div>
+            <div style="text-align:center;margin-top:15px">
+                <button class="btn btn-danger btn-sm" onclick="onlineLeave()">取消</button>
+            </div>
+        </div>
+
+        <!-- 人机难度 -->
+        <div id="page-pve" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="showPage('page-menu')">←</button>
+                <h2>选择难度</h2>
+                <div></div>
+            </div>
+            <div class="diff-selector">
+                <div class="diff-btn" onclick="startPVE('easy')">
+                    <div class="emoji">😊</div>
+                    <div class="name">初级</div>
+                    <div class="desc">适合新手</div>
+                </div>
+                <div class="diff-btn" onclick="startPVE('medium')">
+                    <div class="emoji">🤔</div>
+                    <div class="name">中级</div>
+                    <div class="desc">有挑战</div>
+                </div>
+                <div class="diff-btn" onclick="startPVE('hard')">
+                    <div class="emoji">😈</div>
+                    <div class="name">高级</div>
+                    <div class="desc">很难战胜</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏界面 -->
+        <div id="page-game" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="confirmExit()">←</button>
+                <div class="player-info">
+                    <div class="player-card active" id="pBlack">
+                        <div class="piece black"></div>
+                        <span id="nameBlack">黑棋</span>
+                    </div>
+                    <div class="player-card" id="pWhite">
+                        <div class="piece white"></div>
+                        <span id="nameWhite">白棋</span>
+                    </div>
+                </div>
+                <button class="btn btn-icon btn-secondary" onclick="toggleSound()">🔊</button>
+            </div>
+            <div class="status" id="status">黑棋落子</div>
+            <div class="items-bar" id="itemsBar">
+                <div class="item-btn" id="item-bomb" onclick="useItem('bomb')"><span class="icon">💣</span><span class="count" id="bomb-c">1</span></div>
+                <div class="item-btn" id="item-freeze" onclick="useItem('freeze')"><span class="icon">❄️</span><span class="count" id="freeze-c">1</span></div>
+                <div class="item-btn" id="item-shield" onclick="useItem('shield')"><span class="icon">🛡️</span><span class="count" id="shield-c">1</span></div>
+            </div>
+            <div class="board-wrap">
+                <div class="board-box" id="boardBox">
+                    <canvas id="gameBoard"></canvas>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-secondary btn-sm" onclick="undoMove()">↩️ 悔棋</button>
+                <button class="btn btn-secondary btn-sm" onclick="confirmResign()">🏳️ 认输</button>
+                <button class="btn btn-secondary btn-sm" onclick="restartGame()">🔄 重开</button>
+            </div>
+        </div>
+
+        <!-- 数据统计 -->
+        <div id="page-stats" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="showPage('page-menu')">←</button>
+                <h2>数据统计</h2>
+                <button class="btn btn-sm btn-secondary" onclick="resetStats()">重置</button>
+            </div>
+            <div class="stat-grid" id="statGrid"></div>
+        </div>
+
+        <!-- 成就 -->
+        <div id="page-ach" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="showPage('page-menu')">←</button>
+                <h2>成就系统</h2>
+                <div></div>
+            </div>
+            <div class="ach-grid" id="achGrid"></div>
+        </div>
+
+        <!-- 设置 -->
+        <div id="page-settings" class="page">
+            <div class="game-header">
+                <button class="btn btn-icon btn-secondary" onclick="showPage('page-menu')">←</button>
+                <h2>设置</h2>
+                <div></div>
+            </div>
+            <h3 style="color:var(--text2);margin-bottom:12px;font-size:14px">棋盘主题</h3>
+            <div class="theme-grid">
+                <div class="theme-opt active" onclick="setTheme('default',this)"><div class="preview" style="background:linear-gradient(135deg,#1a1a2e,#16213e)"></div><div class="name">默认</div></div>
+                <div class="theme-opt" onclick="setTheme('neon',this)"><div class="preview" style="background:linear-gradient(135deg,#0a0a1a,#1a0a2e)"></div><div class="name">霓虹</div></div>
+                <div class="theme-opt" onclick="setTheme('chinese',this)"><div class="preview" style="background:linear-gradient(135deg,#f5f0e8,#d4c8b0)"></div><div class="name">中国风</div></div>
+                <div class="theme-opt" onclick="setTheme('dark',this)"><div class="preview" style="background:linear-gradient(135deg,#000,#222)"></div><div class="name">暗黑</div></div>
+            </div>
+            <h3 style="color:var(--text2);margin:20px 0 12px;font-size:14px">音效设置</h3>
+            <div class="setting-row"><label>落子音效</label><div class="toggle on" id="snd-move" onclick="toggleOpt('moveSound',this)"></div></div>
+            <div class="setting-row"><label>胜利音效</label><div class="toggle on" id="snd-win" onclick="toggleOpt('winSound',this)"></div></div>
+        </div>
     </div>
+
+    <!-- 弹窗 -->
+    <div class="modal" id="modalWin">
+        <div class="modal-box">
+            <h2 id="winTitle">🎉 胜利！</h2>
+            <p id="winDesc">恭喜</p>
+            <div class="btns">
+                <button class="btn" onclick="restartGame();closeModal('modalWin')">再来一局</button>
+                <button class="btn btn-secondary" onclick="showPage('page-menu');closeModal('modalWin')">返回</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modalConfirm">
+        <div class="modal-box">
+            <h2 id="cfmTitle">确认</h2>
+            <p id="cfmDesc">确定吗？</p>
+            <div class="btns">
+                <button class="btn" id="cfmYes">确定</button>
+                <button class="btn btn-secondary" onclick="closeModal('modalConfirm')">取消</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modalAch">
+        <div class="modal-box">
+            <h2>🎖️ 成就解锁！</h2>
+            <div id="achContent"></div>
+            <div class="btns"><button class="btn" onclick="closeModal('modalAch')">太棒了！</button></div>
+        </div>
+    </div>
+
     <script src="game.js"></script>
 </body>
 </html>
