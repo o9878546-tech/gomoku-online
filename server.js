@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.roomId = roomId;
         console.log('房间创建:', roomId);
-        callback({ success: true, roomId });
+        callback({ success: true, roomId, color: 'black' });
     });
 
     socket.on('joinRoom', (roomId, callback) => {
